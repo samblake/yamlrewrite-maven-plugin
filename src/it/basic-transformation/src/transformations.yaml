@@ -1,0 +1,18 @@
+transformations:
+  - operation: delete
+    path: data.app.deprecated_feature
+  - operation: set
+    path: data.app.replicas
+    value: 3
+  - operation: set
+    path: data.app.image
+    value: myapp:2.0
+  - operation: set
+    path: metadata.labels.environment
+    value: production
+  - operation: merge
+    path: data.app.database
+    value:
+      pool_size: 20
+      ssl_enabled: true
+

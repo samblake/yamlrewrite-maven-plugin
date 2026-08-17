@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+  namespace: default
+  labels:
+    version: v1.0
+    environment: development
+data:
+  app:
+    replicas: 1
+    image: myapp:1.0
+    deprecated_feature: true
+    database:
+      host: localhost
+      port: 5432
+  settings:
+    timeout: 30
+
