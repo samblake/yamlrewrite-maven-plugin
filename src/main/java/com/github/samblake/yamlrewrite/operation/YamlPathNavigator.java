@@ -2,6 +2,9 @@ package com.github.samblake.yamlrewrite.operation;
 
 import java.util.Map;
 
+import static java.lang.String.join;
+import static java.util.Arrays.copyOf;
+
 /**
  * Utility class for navigating YAML structures using dot notation paths.
  * Supports paths like "spec.replicas" to access nested keys.
@@ -102,7 +105,7 @@ public class YamlPathNavigator {
             return new Object[]{data, keys[0]};
         }
 
-        String parentPath = String.join(".", java.util.Arrays.copyOf(keys, keys.length - 1));
+        String parentPath = join(".", copyOf(keys, keys.length - 1));
         Object parent = getValueAtPath(data, parentPath);
 
         if (!(parent instanceof Map)) {

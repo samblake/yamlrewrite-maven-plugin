@@ -1,22 +1,27 @@
 package com.github.samblake.yamlrewrite.operation;
 
+import com.github.samblake.yamlrewrite.condition.Condition;
 import java.util.Map;
 
 /**
  * Set operation - sets a value at a path in the YAML structure.
  */
-public class SetOperation implements TransformationOperation {
+public class SetOperation extends ConditionalTransformationOperation {
 
-    private final String path;
     private final Object value;
 
     public SetOperation(String path, Object value) {
-        this.path = path;
+        super(path);
+        this.value = value;
+    }
+
+    public SetOperation(String path, Object value, Condition condition) {
+        super(path, condition);
         this.value = value;
     }
 
     @Override
-    public void apply(Map<String, Object> data) {
+    protected void executeOperation(Map<String, Object> data) {
         YamlPathNavigator.setValueAtPath(data, path, value);
     }
 
@@ -24,6 +29,7 @@ public class SetOperation implements TransformationOperation {
     public String getOperationType() {
         return "set";
     }
+
 
     public String getPath() {
         return path;

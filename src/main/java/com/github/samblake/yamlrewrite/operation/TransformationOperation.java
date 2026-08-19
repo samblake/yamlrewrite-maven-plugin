@@ -1,11 +1,14 @@
 package com.github.samblake.yamlrewrite.operation;
 
+import com.github.samblake.yamlrewrite.condition.Condition;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Interface for YAML transformation operations.
  */
 public interface TransformationOperation {
+
     /**
      * Apply the transformation to the given YAML data structure.
      *
@@ -19,5 +22,12 @@ public interface TransformationOperation {
      * @return the operation type
      */
     String getOperationType();
-}
 
+    /**
+     * Get the optional condition for this operation.
+     *
+     * @return Optional containing the condition, or empty if no condition
+     */
+    Optional<Condition> getCondition();
+
+}

@@ -1,26 +1,31 @@
 package com.github.samblake.yamlrewrite.operation;
 
+import com.github.samblake.yamlrewrite.condition.Condition;
 import java.util.Map;
 
 /**
  * Rename operation - renames a key in the YAML structure.
  */
-public class RenameOperation implements TransformationOperation {
+public class RenameOperation extends ConditionalTransformationOperation {
 
-    private final String oldPath;
     private final String newPath;
 
     public RenameOperation(String oldPath, String newPath) {
-        this.oldPath = oldPath;
+        super(oldPath);
+        this.newPath = newPath;
+    }
+
+    public RenameOperation(String oldPath, String newPath, Condition condition) {
+        super(oldPath, condition);
         this.newPath = newPath;
     }
 
     @Override
-    public void apply(Map<String, Object> data) {
-        Object value = YamlPathNavigator.getValueAtPath(data, oldPath);
+    protected void executeOperation(Map<String, Object> data) {
+        Object value = YamlPathNavigator.getValueAtPath(data, path);
         if (value != null) {
             YamlPathNavigator.setValueAtPath(data, newPath, value);
-            YamlPathNavigator.deleteAtPath(data, oldPath);
+            YamlPathNavigator.deleteAtPath(data, path);
         }
     }
 
@@ -29,12 +34,5 @@ public class RenameOperation implements TransformationOperation {
         return "rename";
     }
 
-    public String getOldPath() {
-        return oldPath;
-    }
-
-    public String getNewPath() {
-        return newPath;
-    }
 }
 

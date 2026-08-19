@@ -31,7 +31,7 @@ import java.io.File;
  * </plugin>
  */
 @Mojo( name = "rewrite", defaultPhase = LifecyclePhase.PROCESS_RESOURCES )
-public class MyMojo extends AbstractMojo {
+public class YamlRewriteMojo extends AbstractMojo {
 
     /**
      * The source YAML file to transform.

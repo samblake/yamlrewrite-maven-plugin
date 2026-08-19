@@ -1,5 +1,6 @@
 package com.github.samblake.yamlrewrite.operation;
 
+import com.github.samblake.yamlrewrite.condition.Condition;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -9,18 +10,22 @@ import java.util.Map;
  * For map values, performs a deep merge (nested maps are merged recursively).
  * For other values, the new value overwrites the existing one.
  */
-public class MergeOperation implements TransformationOperation {
+public class MergeOperation extends ConditionalTransformationOperation {
 
-    private final String path;
     private final Object value;
 
     public MergeOperation(String path, Object value) {
-        this.path = path;
+        super(path);
+        this.value = value;
+    }
+
+    public MergeOperation(String path, Object value, Condition condition) {
+        super(path, condition);
         this.value = value;
     }
 
     @Override
-    public void apply(Map<String, Object> data) {
+    protected void executeOperation(Map<String, Object> data) {
         if (!(value instanceof Map)) {
             // If value is not a map, just set it (no merge possible)
             YamlPathNavigator.setValueAtPath(data, path, value);
@@ -32,12 +37,14 @@ public class MergeOperation implements TransformationOperation {
         if (existing == null) {
             // Path doesn't exist, just set the value
             YamlPathNavigator.setValueAtPath(data, path, deepCopyMap((Map<String, Object>) value));
-        } else if (existing instanceof Map) {
+        }
+        else if (existing instanceof Map) {
             // Both are maps, perform deep merge
             Map<String, Object> existingMap = (Map<String, Object>) existing;
             Map<String, Object> mergeValue = (Map<String, Object>) value;
             deepMerge(existingMap, mergeValue);
-        } else {
+        }
+        else {
             // Existing value is not a map, overwrite it
             YamlPathNavigator.setValueAtPath(data, path, deepCopyMap((Map<String, Object>) value));
         }
@@ -47,6 +54,7 @@ public class MergeOperation implements TransformationOperation {
     public String getOperationType() {
         return "merge";
     }
+
 
     public String getPath() {
         return path;

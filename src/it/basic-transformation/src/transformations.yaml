@@ -1,18 +1,54 @@
 transformations:
+  # Delete deprecated field (unconditional - always applied)
   - operation: delete
     path: data.app.deprecated_feature
+
+  # Set replicas (unconditional - always applied)
   - operation: set
     path: data.app.replicas
     value: 3
+
+  # Update image (unconditional - always applied)
   - operation: set
     path: data.app.image
     value: myapp:2.0
+
+  # Set production environment label (unconditional - always applied)
   - operation: set
     path: metadata.labels.environment
     value: production
+
+  # Merge database configuration (unconditional - always applied)
   - operation: merge
     path: data.app.database
     value:
       pool_size: 20
       ssl_enabled: true
 
+  # Example 1: Conditional operation with absolute path
+  # Only increase replicas if environment is already production
+  - operation: set
+    path: data.app.replicas
+    value: 5
+    when:
+      type: equals
+      path: environment
+      value: production
+
+  # Example 2: Conditional operation with relative path (optional path)
+  # Only enable debug mode if it's currently disabled
+  - operation: set
+    path: data.app.debug
+    value: true
+    when:
+      type: equals
+      value: false
+
+  # Example 3: Conditional delete with absolute path
+  # Only delete temp config if environment is staging
+  - operation: delete
+    path: data.app.temp_config
+    when:
+      type: equals
+      path: environment
+      value: staging

@@ -6,6 +6,7 @@ Read a source YAML file, apply transformations, and write the result to an outpu
 ## Features
 
 - **Transformation** - Multiple operations (delete, set, rename, merge) on YAML structures
+- **Conditional Operations** - Apply operations only when specific conditions are met
 - **Dot Notation Paths** - Use simple dot notation to navigate nested structures (e.g., `spec.replicas.count`)
 - **In-place Modification** - Optionally modify the source file directly
 - **YAML Specification** - Define transformations using human-readable YAML format
@@ -149,12 +150,29 @@ Paths use dot notation to navigate nested YAML structures:
 
 Paths are case-sensitive and must match exactly.
 
-## Usage Examples
+## Conditional Operations
 
-### Example
+All operations support optional conditions that determine whether they should be executed. Use the `when` clause to specify a condition.
 
-**Source YAML** (`config.yaml`):
+### String Match Condition
+
+Check if a value at a given path equals a specific string value.
+
 ```yaml
+- operation: set
+  path: config.debug
+  value: true
+  when:
+    type: equals
+    path: environment
+    value: dev
+```
+
+## Example
+
+**Source YAML** (`deployment.yaml`):
+```yaml
+environment: production
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -163,41 +181,68 @@ metadata:
     version: v1
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      app: my-app
   template:
-    metadata:
-      labels:
-        app: my-app
     spec:
       containers:
       - name: app
         image: my-image:1.0
-        deprecatedFlag: true
+        debug: false
 ```
 
 **Transformation File** (`transformations.yaml`):
 ```yaml
 transformations:
+  # Always update the version
   - operation: set
-    path: metadata.labels.environment
-    value: production
-  - operation: set
-    path: spec.replicas
-    value: 3
-  - operation: set
-    path: spec.template.spec.containers.0.image
-    value: my-image:2.0
-  - operation: delete
-    path: spec.template.spec.containers.0.deprecatedFlag
+    path: metadata.labels.version
+    value: v2
+
+   # Only increase replicas in production
+   - operation: set
+     path: spec.replicas
+     value: 5
+     when:
+       type: equals
+       path: environment
+       value: production
+
+   # Only enable debug in dev
+   - operation: set
+     path: spec.template.spec.containers.0.debug
+     value: true
+     when:
+       type: equals
+       path: environment
+       value: dev
+
+   # Only use production image in production
+   - operation: set
+     path: spec.template.spec.containers.0.image
+     value: my-image:prod
+     when:
+       type: equals
+       path: environment
+       value: production
 ```
 
-**Result**:
-- Replicas changed from 1 to 3
-- New environment label added
-- Container image updated
-- Deprecated flag removed
+**Result** (with production environment):
+```yaml
+environment: production
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  labels:
+    version: v2
+spec:
+  replicas: 5
+  template:
+    spec:
+      containers:
+      - name: app
+        image: my-image:prod
+        debug: false
+```
 
 ## Testing
 
