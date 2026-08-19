@@ -5,6 +5,7 @@ import java.util.Map;
 
 /**
  * Delete operation - removes a key from the YAML structure.
+ * Supports wildcard patterns in paths (e.g., "paths.*.get" removes all matching paths).
  */
 public class DeleteOperation extends ConditionalTransformationOperation {
 
@@ -18,7 +19,7 @@ public class DeleteOperation extends ConditionalTransformationOperation {
 
     @Override
     protected void executeOperation(Map<String, Object> data) {
-        YamlPathNavigator.deleteAtPath(data, path);
+        YamlPathNavigator.applyToMatchingPaths(data, path, YamlPathNavigator::deleteAtPath);
     }
 
 

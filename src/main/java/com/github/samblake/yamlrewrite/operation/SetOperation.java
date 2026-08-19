@@ -5,6 +5,7 @@ import java.util.Map;
 
 /**
  * Set operation - sets a value at a path in the YAML structure.
+ * Supports wildcard patterns in paths (e.g., "paths.*.get" sets all matching paths to the same value).
  */
 public class SetOperation extends ConditionalTransformationOperation {
 
@@ -22,7 +23,9 @@ public class SetOperation extends ConditionalTransformationOperation {
 
     @Override
     protected void executeOperation(Map<String, Object> data) {
-        YamlPathNavigator.setValueAtPath(data, path, value);
+        YamlPathNavigator.applyToMatchingPaths(data, path, (d, p) -> {
+            YamlPathNavigator.setValueAtPath(d, p, value);
+        });
     }
 
     @Override

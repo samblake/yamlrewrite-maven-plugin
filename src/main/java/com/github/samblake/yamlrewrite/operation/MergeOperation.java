@@ -9,6 +9,7 @@ import java.util.Map;
  * If the path doesn't exist, it will be created.
  * For map values, performs a deep merge (nested maps are merged recursively).
  * For other values, the new value overwrites the existing one.
+ * Supports wildcard patterns in paths (e.g., "paths.*.get" merges at all matching paths).
  */
 public class MergeOperation extends ConditionalTransformationOperation {
 
@@ -26,17 +27,26 @@ public class MergeOperation extends ConditionalTransformationOperation {
 
     @Override
     protected void executeOperation(Map<String, Object> data) {
+        YamlPathNavigator.applyToMatchingPaths(data, path, (d, p) -> {
+            executeMergeAtPath(d, p);
+        });
+    }
+
+    /**
+     * Execute merge operation at a specific path.
+     */
+    private void executeMergeAtPath(Map<String, Object> data, String pathToMerge) {
         if (!(value instanceof Map)) {
             // If value is not a map, just set it (no merge possible)
-            YamlPathNavigator.setValueAtPath(data, path, value);
+            YamlPathNavigator.setValueAtPath(data, pathToMerge, value);
             return;
         }
 
-        Object existing = YamlPathNavigator.getValueAtPath(data, path);
+        Object existing = YamlPathNavigator.getValueAtPath(data, pathToMerge);
 
         if (existing == null) {
             // Path doesn't exist, just set the value
-            YamlPathNavigator.setValueAtPath(data, path, deepCopyMap((Map<String, Object>) value));
+            YamlPathNavigator.setValueAtPath(data, pathToMerge, deepCopyMap((Map<String, Object>) value));
         }
         else if (existing instanceof Map) {
             // Both are maps, perform deep merge
@@ -46,7 +56,7 @@ public class MergeOperation extends ConditionalTransformationOperation {
         }
         else {
             // Existing value is not a map, overwrite it
-            YamlPathNavigator.setValueAtPath(data, path, deepCopyMap((Map<String, Object>) value));
+            YamlPathNavigator.setValueAtPath(data, pathToMerge, deepCopyMap((Map<String, Object>) value));
         }
     }
 

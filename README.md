@@ -19,7 +19,7 @@ Add the plugin to your project's `pom.xml`:
 <plugin>
   <groupId>com.github.samblake.yamlrewrite</groupId>
   <artifactId>yamlrewrite-maven-plugin</artifactId>
-  <version>1.0</version>
+  <version>1.2</version>
   <executions>
     <execution>
       <goals>
@@ -54,11 +54,15 @@ transformations:
   - operation: delete
     path: spec.deprecatedField
   - operation: set
-    path: spec.replicas
+    path: spec.*.replicas
     value: 3
   - operation: rename
     from: spec.oldName
     to: spec.newName
+    when:
+      type: equals
+      path: environment
+      value: dev
   - operation: merge
     path: spec
     value:
@@ -148,7 +152,11 @@ Paths use dot notation to navigate nested YAML structures:
 - `metadata.labels.app` - Access deeply nested structures
 - `root` - Access top-level keys
 
-Paths are case-sensitive and must match exactly.
+### Wildcard Patterns
+
+Paths support wildcard patterns using `*` to match any key at that level.
+
+Wildcard patterns work with all operations (delete, set, merge). When a wildcard matches multiple paths, the operation is applied to each matching path.
 
 ## Conditional Operations
 
@@ -239,9 +247,9 @@ spec:
   template:
     spec:
       containers:
-      - name: app
-        image: my-image:prod
-        debug: false
+       - name: app
+         image: my-image:prod
+         debug: false
 ```
 
 ## Testing

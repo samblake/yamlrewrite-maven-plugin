@@ -868,4 +868,256 @@ public class YamlRewriteMojoTest {
          assertTrue("Should preserve env as staging", output.contains("env: staging"));
      }
 
+     /**
+      * Test delete operation with wildcard patterns.
+      * Example: paths.*.get should delete all .get keys under paths
+      */
+     @Test
+     public void testDeleteOperationWithWildcard() throws Exception {
+         // Setup
+         fileSystem.writeRawYaml("source.yaml",
+                 "paths:\n" +
+                 "  /users:\n" +
+                 "    get: description1\n" +
+                 "    post: description2\n" +
+                 "  /posts:\n" +
+                 "    get: description3\n" +
+                 "    put: description4");
+
+         fileSystem.writeRawYaml("transform.yaml",
+                 "transformations:\n" +
+                 "  - operation: delete\n" +
+                 "    path: paths.*.get");
+
+         // Execute
+         transformer.transform("source.yaml", "transform.yaml", "output.yaml");
+
+         // Verify - both get operations should be deleted
+         assertTrue("Output should exist", fileSystem.fileExists("output.yaml"));
+         String output = fileSystem.readRawYaml("output.yaml");
+         assertFalse("Should not contain /users get", output.contains("get: description1"));
+         assertFalse("Should not contain /posts get", output.contains("get: description3"));
+         assertTrue("Should preserve post", output.contains("post: description2"));
+         assertTrue("Should preserve put", output.contains("put: description4"));
+     }
+
+     /**
+      * Test set operation with wildcard patterns.
+      * Example: paths.*.deprecated should set all .deprecated keys to a value
+      */
+     @Test
+     public void testSetOperationWithWildcard() throws Exception {
+         // Setup
+         fileSystem.writeRawYaml("source.yaml",
+                 "services:\n" +
+                 "  api:\n" +
+                 "    version: v1\n" +
+                 "    status: active\n" +
+                 "  auth:\n" +
+                 "    version: v1\n" +
+                 "    status: active");
+
+         fileSystem.writeRawYaml("transform.yaml",
+                 "transformations:\n" +
+                 "  - operation: set\n" +
+                 "    path: services.*.version\n" +
+                 "    value: v2");
+
+         // Execute
+         transformer.transform("source.yaml", "transform.yaml", "output.yaml");
+
+         // Verify - both versions should be updated
+         assertTrue("Output should exist", fileSystem.fileExists("output.yaml"));
+         String output = fileSystem.readRawYaml("output.yaml");
+         // Verify v2 appears and we count it appears twice (api and auth)
+         assertTrue("Should contain api version v2", output.contains("api:"));
+         assertTrue("Should contain auth version v2", output.contains("auth:"));
+         // Count occurrences of v2
+         int count = 0;
+         int index = 0;
+         while ((index = output.indexOf("v2", index)) != -1) {
+             count++;
+             index++;
+         }
+         assertTrue("Should have at least 2 occurrences of v2", count >= 2);
+     }
+
+     /**
+      * Test merge operation with wildcard patterns.
+      */
+     @Test
+     public void testMergeOperationWithWildcard() throws Exception {
+         // Setup
+         fileSystem.writeRawYaml("source.yaml",
+                 "endpoints:\n" +
+                 "  /users:\n" +
+                 "    method: GET\n" +
+                 "  /posts:\n" +
+                 "    method: GET");
+
+         fileSystem.writeRawYaml("transform.yaml",
+                 "transformations:\n" +
+                 "  - operation: merge\n" +
+                 "    path: endpoints.*\n" +
+                 "    value:\n" +
+                 "      auth_required: true\n" +
+                 "      timeout: 30");
+
+         // Execute
+         transformer.transform("source.yaml", "transform.yaml", "output.yaml");
+
+         // Verify - both endpoints should be merged
+         assertTrue("Output should exist", fileSystem.fileExists("output.yaml"));
+         String output = fileSystem.readRawYaml("output.yaml");
+         assertTrue("Should preserve /users method", output.contains("method: GET"));
+         // Count occurrences of auth_required and timeout (should appear twice each)
+         int authCount = 0;
+         int timeoutCount = 0;
+         int index = 0;
+         while ((index = output.indexOf("auth_required", index)) != -1) {
+             authCount++;
+             index++;
+         }
+         index = 0;
+         while ((index = output.indexOf("timeout: 30", index)) != -1) {
+             timeoutCount++;
+             index++;
+         }
+         assertTrue("Should have at least 2 occurrences of auth_required", authCount >= 2);
+         assertTrue("Should have at least 2 occurrences of timeout", timeoutCount >= 2);
+     }
+
+     /**
+      * Test wildcard with deeper nesting patterns.
+      */
+     @Test
+     public void testWildcardWithDeeperNesting() throws Exception {
+         // Setup
+         fileSystem.writeRawYaml("source.yaml",
+                 "api:\n" +
+                 "  v1:\n" +
+                 "    routes:\n" +
+                 "      /users:\n" +
+                 "        deprecated: false\n" +
+                 "      /posts:\n" +
+                 "        deprecated: false");
+
+         fileSystem.writeRawYaml("transform.yaml",
+                 "transformations:\n" +
+                 "  - operation: set\n" +
+                 "    path: api.v1.routes.*.deprecated\n" +
+                 "    value: true");
+
+         // Execute
+         transformer.transform("source.yaml", "transform.yaml", "output.yaml");
+
+         // Verify
+         assertTrue("Output should exist", fileSystem.fileExists("output.yaml"));
+         String output = fileSystem.readRawYaml("output.yaml");
+         // Count occurrences of deprecated: true (should be at least 2)
+         int count = 0;
+         int index = 0;
+         while ((index = output.indexOf("deprecated: true", index)) != -1) {
+             count++;
+             index++;
+         }
+         assertTrue("Should have at least 2 occurrences of deprecated: true", count >= 2);
+     }
+
+     /**
+      * Test wildcard with multiple levels of wildcards.
+      */
+     @Test
+     public void testMultipleLevelWildcards() throws Exception {
+         // Setup
+         fileSystem.writeRawYaml("source.yaml",
+                 "config:\n" +
+                 "  database:\n" +
+                 "    primary:\n" +
+                 "      host: localhost\n" +
+                 "    replica:\n" +
+                 "      host: localhost");
+
+         fileSystem.writeRawYaml("transform.yaml",
+                 "transformations:\n" +
+                 "  - operation: set\n" +
+                 "    path: config.database.*.host\n" +
+                 "    value: remote-db.example.com");
+
+         // Execute
+         transformer.transform("source.yaml", "transform.yaml", "output.yaml");
+
+         // Verify both database instances should be updated
+         assertTrue("Output should exist", fileSystem.fileExists("output.yaml"));
+         String output = fileSystem.readRawYaml("output.yaml");
+         int count = 0;
+         int index = 0;
+         while ((index = output.indexOf("remote-db.example.com", index)) != -1) {
+             count++;
+             index++;
+         }
+         assertTrue("Should have at least 2 occurrences of new host", count >= 2);
+     }
+
+     /**
+      * Test wildcard that matches nothing (should not fail).
+      */
+     @Test
+     public void testWildcardThatMatchesNothing() throws Exception {
+         // Setup
+         fileSystem.writeRawYaml("source.yaml",
+                 "config:\n" +
+                 "  database:\n" +
+                 "    host: localhost");
+
+         fileSystem.writeRawYaml("transform.yaml",
+                 "transformations:\n" +
+                 "  - operation: delete\n" +
+                 "    path: nonexistent.*.field");
+
+         // Execute - should not fail
+         transformer.transform("source.yaml", "transform.yaml", "output.yaml");
+
+         // Verify file still exists and is unchanged
+         assertTrue("Output should exist", fileSystem.fileExists("output.yaml"));
+         String output = fileSystem.readRawYaml("output.yaml");
+         assertTrue("Should preserve database config", output.contains("host: localhost"));
+     }
+
+     /**
+      * Test combining wildcard delete with other operations.
+      */
+     @Test
+     public void testWildcardDeleteWithOtherOperations() throws Exception {
+         // Setup
+         fileSystem.writeRawYaml("source.yaml",
+                 "paths:\n" +
+                 "  /users:\n" +
+                 "    get: description1\n" +
+                 "    delete: description2\n" +
+                 "  /posts:\n" +
+                 "    get: description3\n" +
+                 "    delete: description4\n" +
+                 "info:\n" +
+                 "  version: v1");
+
+         fileSystem.writeRawYaml("transform.yaml",
+                 "transformations:\n" +
+                 "  - operation: delete\n" +
+                 "    path: paths.*.delete\n" +
+                 "  - operation: set\n" +
+                 "    path: info.version\n" +
+                 "    value: v2");
+
+         // Execute
+         transformer.transform("source.yaml", "transform.yaml", "output.yaml");
+
+         // Verify
+         assertTrue("Output should exist", fileSystem.fileExists("output.yaml"));
+         String output = fileSystem.readRawYaml("output.yaml");
+         assertFalse("Should delete both delete operations", output.contains("delete: description"));
+         assertTrue("Should keep get operations", output.contains("get:"));
+         assertTrue("Should update version", output.contains("v2"));
+     }
+
  }
