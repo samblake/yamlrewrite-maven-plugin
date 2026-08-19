@@ -1,0 +1,32 @@
+environment: production
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+  namespace: default
+  labels:
+    version: v1.0
+    monitoring: enabled
+    tier: critical
+    sla: gold
+    environment: production
+  version: 2.0
+data:
+  app:
+    name: myapp
+    replicas: 5
+    debug: false
+    image: myapp:2.0-prod
+    database:
+      host: localhost
+      port: 5432
+      pool_size: 20
+      ssl_enabled: true
+      replica_set: enabled
+      backup_enabled: true
+      connection_timeout: 60
+    permanent_config:
+      timeout: 30
+  settings:
+    timeout: 30
+

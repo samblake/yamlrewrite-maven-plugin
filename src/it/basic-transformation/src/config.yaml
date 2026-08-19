@@ -1,3 +1,6 @@
+# Environment set to 'production' to test conditional transformations
+environment: production
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -5,12 +8,17 @@ metadata:
   namespace: default
   labels:
     version: v1.0
-    environment: development
 data:
   app:
+    name: myapp
     replicas: 1
+    debug: false
     image: myapp:1.0
-    deprecated_feature: true
+    deprecated_feature:
+      enabled: true
+      setting: old_value
+    temp_config:
+      timeout: 30
     database:
       host: localhost
       port: 5432

@@ -1,32 +1,67 @@
+# Comprehensive transformation file that covers all scenarios:
+# - Unconditional operations (set, delete, merge, rename)
+# - Conditional operations based on environment (dev, staging, production)
+
 transformations:
-  # Delete deprecated field (unconditional - always applied)
-  - operation: delete
-    path: data.app.deprecated_feature
+  # ========== UNCONDITIONAL OPERATIONS (Always applied) ==========
 
-  # Set replicas (unconditional - always applied)
+  # Update version metadata
   - operation: set
-    path: data.app.replicas
-    value: 3
+    path: metadata.version
+    value: 2.0
 
-  # Update image (unconditional - always applied)
+  # Update image for all environments
   - operation: set
     path: data.app.image
     value: myapp:2.0
 
-  # Set production environment label (unconditional - always applied)
-  - operation: set
-    path: metadata.labels.environment
-    value: production
+  # Delete deprecated feature
+  - operation: delete
+    path: data.app.deprecated_feature
 
-  # Merge database configuration (unconditional - always applied)
+  # Merge database configuration
   - operation: merge
     path: data.app.database
     value:
       pool_size: 20
       ssl_enabled: true
+      replica_set: enabled
+      backup_enabled: true
+      connection_timeout: 60
 
-  # Example 1: Conditional operation with absolute path
-  # Only increase replicas if environment is already production
+  # ========== CONDITIONAL OPERATIONS ==========
+
+  # ---- Development Environment ----
+  # Only enable debug mode in development
+  - operation: set
+    path: data.app.debug
+    value: true
+    when:
+      type: equals
+      path: environment
+      value: dev
+
+  # Only set dev replicas (minimum resources)
+  - operation: set
+    path: data.app.replicas
+    value: 1
+    when:
+      type: equals
+      path: environment
+      value: dev
+
+  # ---- Staging Environment ----
+  # Set moderate replicas in staging
+  - operation: set
+    path: data.app.replicas
+    value: 2
+    when:
+      type: equals
+      path: environment
+      value: staging
+
+  # ---- Production Environment ----
+  # Increase replicas in production (high availability)
   - operation: set
     path: data.app.replicas
     value: 5
@@ -35,20 +70,41 @@ transformations:
       path: environment
       value: production
 
-  # Example 2: Conditional operation with relative path (optional path)
-  # Only enable debug mode if it's currently disabled
+  # Set production-specific image tag
   - operation: set
-    path: data.app.debug
-    value: true
-    when:
-      type: equals
-      value: false
-
-  # Example 3: Conditional delete with absolute path
-  # Only delete temp config if environment is staging
-  - operation: delete
-    path: data.app.temp_config
+    path: data.app.image
+    value: myapp:2.0-prod
     when:
       type: equals
       path: environment
-      value: staging
+      value: production
+
+  # Enable advanced monitoring in production
+  - operation: merge
+    path: metadata.labels
+    value:
+      monitoring: enabled
+      tier: critical
+      sla: gold
+    when:
+      type: equals
+      path: environment
+      value: production
+
+  # Conditional rename in production
+  - operation: rename
+    from: data.app.temp_config
+    to: data.app.permanent_config
+    when:
+      type: equals
+      path: environment
+      value: production
+
+  # Set production environment label
+  - operation: set
+    path: metadata.labels.environment
+    value: production
+    when:
+      type: equals
+      path: environment
+      value: production
