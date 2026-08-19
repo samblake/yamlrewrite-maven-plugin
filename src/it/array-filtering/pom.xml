@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.github.samblake.yamlrewrite.it</groupId>
+  <artifactId>array-filtering-it</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <name>Array Filtering Integration Test</name>
+  <description>Integration test for array filtering and empty array detection using yamlrewrite-maven-plugin</description>
+
+   <properties>
+     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+     <maven.compiler.source>8</maven.compiler.source>
+     <maven.compiler.target>8</maven.compiler.target>
+   </properties>
+
+   <dependencies>
+     <dependency>
+       <groupId>org.yaml</groupId>
+       <artifactId>snakeyaml</artifactId>
+       <version>2.0</version>
+     </dependency>
+   </dependencies>
+
+   <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.0</version>
+        <configuration>
+          <source>8</source>
+          <target>8</target>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>com.github.samblake.yamlrewrite</groupId>
+        <artifactId>yamlrewrite-maven-plugin</artifactId>
+        <version>@project.version@</version>
+        <executions>
+          <execution>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>rewrite</goal>
+            </goals>
+            <configuration>
+              <sourceFile>src/openapi.yaml</sourceFile>
+              <transformationFile>src/transformations.yaml</transformationFile>
+              <outputFile>target/openapi-transformed.yaml</outputFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.0.0</version>
+        <executions>
+          <execution>
+            <id>verify-transformation</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>com.github.samblake.yamlrewrite.it.ArrayFilteringIT</mainClass>
+              <systemProperties>
+                <systemProperty>
+                  <key>basedir</key>
+                  <value>${project.basedir}</value>
+                </systemProperty>
+              </systemProperties>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+

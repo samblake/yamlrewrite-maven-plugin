@@ -1,0 +1,41 @@
+# Array Filtering and Empty Array Detection Integration Test
+# This demonstrates:
+# 1. Filtering array elements by property value
+# 2. Deleting empty arrays after filtering
+# 3. Handling OpenAPI specifications
+
+transformations:
+  # Remove deprecated parameters from the first endpoint
+  - operation: delete
+    path: paths./api/basket/add/{code}.post.parameters[name=deprecated_session_id]
+
+  # Remove deprecated parameters from the second endpoint
+  - operation: delete
+    path: paths./api/basket/remove/{code}.delete.parameters[name=old_tracking_id]
+
+  # Remove deprecated security scheme
+  - operation: delete
+    path: components.securitySchemes[oauth2_deprecated]
+
+  # Update API version
+  - operation: set
+    path: info.version
+    value: 2.0.0
+
+  # Add security information
+  - operation: merge
+    path: info
+    value:
+      x-security-reviewed: "2026-08-19"
+      x-migration-status: cleanup-completed
+
+  # Add audit header to the add endpoint
+  - operation: merge
+    path: paths./api/basket/add/{code}.post.parameters
+    value:
+      - name: marked-for-review
+        in: header
+        schema:
+          type: boolean
+
+

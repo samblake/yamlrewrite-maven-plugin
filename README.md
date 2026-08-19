@@ -8,6 +8,8 @@ Read a source YAML file, apply transformations, and write the result to an outpu
 - **Transformation** - Multiple operations (delete, set, rename, merge) on YAML structures
 - **Conditional Operations** - Apply operations only when specific conditions are met
 - **Dot Notation Paths** - Use simple dot notation to navigate nested structures (e.g., `spec.replicas.count`)
+- **Wildcard support** - Use wildcards to match multiple elements in arrays (e.g., `endpoints.*.parameters`)
+- **Array Filtering** - Filter array elements by property values (e.g., `parameters[name=user]`)
 - **In-place Modification** - Optionally modify the source file directly
 - **YAML Specification** - Define transformations using human-readable YAML format
 
@@ -154,9 +156,34 @@ Paths use dot notation to navigate nested YAML structures:
 
 ### Wildcard Patterns
 
-Paths support wildcard patterns using `*` to match any key at that level.
+Paths support wildcard patterns using `*` to match any key at that level:
 
 Wildcard patterns work with all operations (delete, set, merge). When a wildcard matches multiple paths, the operation is applied to each matching path.
+
+### Array Access
+
+Paths support accessing array elements by index or by filtering:
+
+- `parameters.0` - Access the first element of parameters array
+- `parameters[name=channel]` - Filter array elements by property value
+- `endpoints.*` - Match all elements in an array
+- `items[]` - Match empty arrays/lists (for detection and cleanup)
+
+**Example with array filtering:**
+
+Transformation to remove a specific parameter by name:
+```yaml
+- operation: delete
+  path: parameters[name=channel]  # Delete the parameter where name=channel
+```
+
+**Detecting empty arrays:**
+
+Remove empty arrays:
+```yaml
+- operation: delete
+  path: endpoints[]  # Deletes if endpoints array is empty
+```
 
 ## Conditional Operations
 
@@ -246,10 +273,10 @@ spec:
   replicas: 5
   template:
     spec:
-      containers:
-       - name: app
-         image: my-image:prod
-         debug: false
+       containers:
+        - name: app
+          image: my-image:prod
+          debug: false
 ```
 
 ## Testing

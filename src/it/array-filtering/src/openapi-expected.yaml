@@ -1,0 +1,73 @@
+openapi: 3.0.0
+info:
+  title: Basket API
+  version: 2.0.0
+  x-security-reviewed: '2026-08-19'
+  x-migration-status: cleanup-completed
+
+paths:
+  /api/basket/add/{code}:
+    post:
+      summary: Add item to basket
+      operationId: addToBasket
+      tags:
+        - Basket
+      parameters:
+        - name: channel
+          in: query
+          required: true
+          description: Channel identifier
+          schema:
+            type: string
+            enum: [web, mobile, api]
+        - name: code
+          in: path
+          required: true
+          description: Product code
+          schema:
+            type: string
+        - name: marked-for-review
+          in: header
+          schema:
+            type: boolean
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Success
+
+  /api/basket/remove/{code}:
+    delete:
+      summary: Remove item from basket
+      operationId: removeFromBasket
+      tags:
+        - Basket
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: Product code
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object

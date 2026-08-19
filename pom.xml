@@ -7,7 +7,7 @@
 
   <groupId>com.github.samblake.yamlrewrite</groupId>
   <artifactId>yamlrewrite-maven-plugin</artifactId>
-  <version>1.2</version>
+  <version>1.3</version>
   <packaging>maven-plugin</packaging>
 
   <name>yamlrewrite-maven-plugin Maven Plugin</name>

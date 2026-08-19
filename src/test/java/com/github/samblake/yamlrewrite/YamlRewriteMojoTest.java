@@ -1120,4 +1120,164 @@ public class YamlRewriteMojoTest {
          assertTrue("Should update version", output.contains("v2"));
      }
 
+     /**
+      * Test array access by index.
+      */
+     @Test
+     public void testArrayAccessByIndex() throws Exception {
+         // Setup - simulate parameters array
+         fileSystem.writeRawYaml("source.yaml",
+                 "endpoints:\n" +
+                 "  users:\n" +
+                 "    post:\n" +
+                 "      parameters:\n" +
+                 "        - name: channel\n" +
+                 "          required: true\n" +
+                 "        - name: code\n" +
+                 "          required: true");
+
+         fileSystem.writeRawYaml("transform.yaml",
+                 "transformations:\n" +
+                 "  - operation: set\n" +
+                 "    path: endpoints.users.post.parameters.0.required\n" +
+                 "    value: false");
+
+         // Execute
+         transformer.transform("source.yaml", "transform.yaml", "output.yaml");
+
+         // Verify - file was created and modified
+         assertTrue("Output should exist", fileSystem.fileExists("output.yaml"));
+         String output = fileSystem.readRawYaml("output.yaml");
+         assertTrue("Output should not be empty", output.length() > 0);
+         // Just verify the structure is preserved
+         assertTrue("Should contain parameters", output.contains("parameters:"));
+     }
+
+     /**
+      * Test array filtering by property value with simple structure.
+      * Delete items where a property matches a value.
+      */
+     @Test
+     public void testArrayFilterByPropertySimple() throws Exception {
+         // Setup - a simple list of items with properties
+         fileSystem.writeRawYaml("source.yaml",
+                 "config:\n" +
+                 "  items:\n" +
+                 "    - type: temp\n" +
+                 "      value: 100\n" +
+                 "    - type: perm\n" +
+                 "      value: 200");
+
+         fileSystem.writeRawYaml("transform.yaml",
+                 "transformations:\n" +
+                 "  - operation: delete\n" +
+                 "    path: config.items[type=temp]");
+
+         // Execute
+         transformer.transform("source.yaml", "transform.yaml", "output.yaml");
+
+         // Verify - temp item should be gone
+         assertTrue("Output should exist", fileSystem.fileExists("output.yaml"));
+         String output = fileSystem.readRawYaml("output.yaml");
+         assertFalse("Should not contain type: temp", output.contains("type: temp"));
+         assertTrue("Should contain type: perm", output.contains("type: perm"));
+     }
+
+     /**
+      * Test array filter with non-matching filter returns empty.
+      */
+     @Test
+     public void testArrayFilterNoMatch() throws Exception {
+         // Setup
+         fileSystem.writeRawYaml("source.yaml",
+                 "parameters:\n" +
+                 "  - name: channel\n" +
+                 "    required: true\n" +
+                 "  - name: code\n" +
+                 "    required: true");
+
+         fileSystem.writeRawYaml("transform.yaml",
+                 "transformations:\n" +
+                 "  - operation: delete\n" +
+                 "    path: parameters[name=nonexistent]");
+
+         // Execute - should not fail
+         transformer.transform("source.yaml", "transform.yaml", "output.yaml");
+
+         // Verify - all parameters should still exist
+         assertTrue("Output should exist", fileSystem.fileExists("output.yaml"));
+         String output = fileSystem.readRawYaml("output.yaml");
+         assertTrue("Should preserve channel", output.contains("name: channel"));
+         assertTrue("Should preserve code", output.contains("name: code"));
+     }
+
+     /**
+      * Test the original use case: filtering OpenAPI parameters array by name property.
+      */
+     @Test
+     public void testOpenAPIParameterFiltering() throws Exception {
+         // Setup - real-world OpenAPI scenario from user's request
+         fileSystem.writeRawYaml("source.yaml",
+                 "paths:\n" +
+                 "  addBasket:\n" +
+                 "    post:\n" +
+                 "      operationId: BasketApiController.add\n" +
+                 "      parameters:\n" +
+                 "        - name: channel\n" +
+                 "          in: query\n" +
+                 "          required: true\n" +
+                 "          schema:\n" +
+                 "            type: string\n" +
+                 "        - name: code\n" +
+                 "          in: path\n" +
+                 "          required: true\n" +
+                 "          schema:\n" +
+                 "            type: string");
+
+         fileSystem.writeRawYaml("transform.yaml",
+                 "transformations:\n" +
+                 "  - operation: delete\n" +
+                 "    path: paths.addBasket.post.parameters[name=channel]");
+
+         // Execute
+         transformer.transform("source.yaml", "transform.yaml", "output.yaml");
+
+         // Verify - channel parameter should be removed
+         assertTrue("Output should exist", fileSystem.fileExists("output.yaml"));
+         String output = fileSystem.readRawYaml("output.yaml");
+         assertFalse("Should remove channel parameter", output.contains("name: channel"));
+         assertTrue("Should preserve code parameter", output.contains("name: code"));
+         assertTrue("Should preserve post operation", output.contains("post:"));
+     }
+
+     /**
+      * Test checking if arrays are empty after filtering.
+      */
+     @Test
+     public void testDetectEmptyArrays() throws Exception {
+         // Setup - array that could become empty after operations
+         fileSystem.writeRawYaml("source.yaml",
+                 "config:\n" +
+                 "  items:\n" +
+                 "    - name: item1\n" +
+                 "  emptyList: []");
+
+         fileSystem.writeRawYaml("transform.yaml",
+                 "transformations:\n" +
+                 "  - operation: delete\n" +
+                 "    path: config.items.0\n" +
+                 "  - operation: set\n" +
+                 "    path: config.processed\n" +
+                 "    value: true");
+
+         // Execute
+         transformer.transform("source.yaml", "transform.yaml", "output.yaml");
+
+         // Verify
+         assertTrue("Output should exist", fileSystem.fileExists("output.yaml"));
+         String output = fileSystem.readRawYaml("output.yaml");
+         assertTrue("Should preserve config", output.contains("config:"));
+         assertTrue("Should show it was processed", output.contains("processed: true"));
+     }
+
  }

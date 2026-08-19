@@ -1,0 +1,87 @@
+openapi: 3.0.0
+info:
+  title: Basket API
+  version: 1.0.0
+
+paths:
+  /api/basket/add/{code}:
+    post:
+      summary: Add item to basket
+      operationId: addToBasket
+      tags:
+        - Basket
+      parameters:
+        - name: channel
+          in: query
+          required: true
+          description: Channel identifier
+          schema:
+            type: string
+            enum: [web, mobile, api]
+        - name: code
+          in: path
+          required: true
+          description: Product code
+          schema:
+            type: string
+        - name: deprecated_session_id
+          in: header
+          required: false
+          description: Deprecated parameter for backward compatibility
+          deprecated: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Success
+
+  /api/basket/remove/{code}:
+    delete:
+      summary: Remove item from basket
+      operationId: removeFromBasket
+      tags:
+        - Basket
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: Product code
+          schema:
+            type: string
+        - name: old_tracking_id
+          in: query
+          required: false
+          deprecated: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    oauth2_deprecated:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://example.com/oauth
+          scopes:
+            read: Read access
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
